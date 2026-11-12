@@ -28,6 +28,7 @@ const ItemInfo = () => {
     zipProgress,
     startZipping,
     setShowUploadMenu,
+    showShareModal,
     setShowShareModal,
     setShowFileViewer
   } = useContext<ExplorerContextType>(ExplorerContext)
@@ -37,6 +38,7 @@ const ItemInfo = () => {
   const [imageError, setImageError] = useState(false)
   const [permanentLoading, setPermanentLoading] = useState(false)
   const [permanentStatus, setPermanentStatus] = useState("")
+  const [staticShareId, setStaticShareId] = useState<string | null>(null)
 
   const fetchImage = async () => {
     setImageLoading(true)
@@ -85,6 +87,62 @@ const ItemInfo = () => {
     }
   }, [itemInfo])
 
+  const getFullPath = () => {
+    if (!itemInfo) return ""
+    const rawPath = path === "./" ? itemInfo.name : `${path}/${itemInfo.name}`
+    return rawPath.replace(/^\.\//, "").replace(/\/+/g, "/")
+  }
+
+  const copyText = async (text: string) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text)
+      return
+    }
+
+    const textArea = document.createElement("textarea")
+    textArea.value = text
+    textArea.style.position = "absolute"
+    textArea.style.left = "-999999px"
+    document.body.prepend(textArea)
+    textArea.select()
+    document.execCommand("copy")
+    textArea.remove()
+  }
+
+  const flashPermanentStatus = (message: string) => {
+    setPermanentStatus(message)
+    setTimeout(() => setPermanentStatus(""), 4000)
+  }
+
+  // Check whether this file already has a permanent link when it is selected.
+  useLayoutEffect(() => {
+    let cancelled = false
+
+    setStaticShareId(null)
+
+    if (!itemInfo || itemInfo.isDirectory) {
+      return
+    }
+
+    const fullPath = getFullPath()
+
+    axiosInstance.get(`/shared/${fullPath}?static=true`)
+      .then((response) => {
+        if (!cancelled) {
+          setStaticShareId(response.data.id)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setStaticShareId(null)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [itemInfo?.path, itemInfo?.name, path, showShareModal])
+
   const sharePermanentLink = async () => {
     if (!itemInfo || itemInfo.isDirectory) return
 
@@ -92,8 +150,13 @@ const ItemInfo = () => {
     setPermanentStatus("")
 
     try {
-      const rawPath = path === "./" ? itemInfo.name : `${path}/${itemInfo.name}`
-      const fullPath = rawPath.replace(/^\.\//, "").replace(/\/+/g, "/")
+      const fullPath = getFullPath()
+
+      if (staticShareId) {
+        await copyText(`${window.location.origin}/s/${staticShareId}`)
+        flashPermanentStatus("Permanent link copied!")
+        return
+      }
 
       let shared
       try {
@@ -115,25 +178,33 @@ const ItemInfo = () => {
         }
       }
 
-      const url = `${window.location.origin}/s/${shared.id}`
-
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(url)
-      } else {
-        const textArea = document.createElement("textarea")
-        textArea.value = url
-        textArea.style.position = "absolute"
-        textArea.style.left = "-999999px"
-        document.body.prepend(textArea)
-        textArea.select()
-        document.execCommand("copy")
-        textArea.remove()
-      }
-
-      setPermanentStatus("Permanent link copied!")
-      setTimeout(() => setPermanentStatus(""), 4000)
+      setStaticShareId(shared.id)
+      await copyText(`${window.location.origin}/s/${shared.id}`)
+      flashPermanentStatus("Permanent link created and copied!")
     } catch (error: any) {
       setPermanentStatus(error.response?.data?.err || "Failed to create permanent link")
+      setTimeout(() => setPermanentStatus(""), 5000)
+    } finally {
+      setPermanentLoading(false)
+    }
+  }
+
+  const disablePermanentLink = async () => {
+    if (!itemInfo || itemInfo.isDirectory) return
+
+    if (!window.confirm("Disable the permanent link? The URL will stop working immediately.")) {
+      return
+    }
+
+    setPermanentLoading(true)
+    setPermanentStatus("")
+
+    try {
+      await axiosInstance.delete(`/shared/${getFullPath()}?static=true`)
+      setStaticShareId(null)
+      flashPermanentStatus("Permanent link disabled")
+    } catch (error: any) {
+      setPermanentStatus(error.response?.data?.err || "Failed to disable permanent link")
       setTimeout(() => setPermanentStatus(""), 5000)
     } finally {
       setPermanentLoading(false)
@@ -362,10 +433,19 @@ const ItemInfo = () => {
               permissions?.download_files && !itemInfo?.isDirectory ?
                 <button
                   className='bg-emerald-700 hover:bg-emerald-600 px-6 font-bold rounded-xl flex items-center justify-center gap-2'
-                  title='Create a permanent public link and copy it.'
+                  title={staticShareId ? 'Copy the existing permanent link.' : 'Create a permanent public link and copy it.'}
                   disabled={permanentLoading}
                   onClick={sharePermanentLink}
-                ><FaLink size={14} />{permanentLoading ? "Creating..." : "Permanent link"}</button> : null
+                ><FaLink size={14} />{permanentLoading ? "Working..." : (staticShareId ? "Copy permanent link" : "Permanent link")}</button> : null
+            }
+            {
+              permissions?.download_files && !itemInfo?.isDirectory && staticShareId ?
+                <button
+                  className='bg-red-700/80 hover:bg-red-600 px-6 font-bold rounded-xl'
+                  title='Disable the permanent link. The URL will stop working immediately.'
+                  disabled={permanentLoading}
+                  onClick={disablePermanentLink}
+                >Disable permanent link</button> : null
             }
             {permanentStatus && (
               <div className='text-center text-sm text-emerald-400 break-all'>{permanentStatus}</div>

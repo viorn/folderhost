@@ -44,6 +44,18 @@ they are stored as separate records and have different IDs.
 Deleting the permanent link in the dialog (or deleting the shared record) removes
 the URL immediately. If the underlying file is deleted, the URL returns `404`.
 
+## Disabling / revoking a permanent link
+
+A permanent link can be turned off at any time:
+
+- in the file info panel, when the link exists, the green button becomes
+  **Copy permanent link** and a red **Disable permanent link** button appears;
+- in the **Share** dialog, press **Disable** in the **Permanent Link** section.
+
+Disabling deletes the share record, so the `/s/<id>` URL returns `404`
+immediately. Re-enabling creates a **new** URL with a new ID: revoked links
+cannot be revived, which is intentional.
+
 ## Behaviour and security
 
 - Only users with the **download** permission can create static links.

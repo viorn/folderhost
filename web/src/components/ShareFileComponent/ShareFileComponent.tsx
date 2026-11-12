@@ -382,6 +382,9 @@ const ShareFileComponent = () => {
                                                 Copy
                                             </button>
                                         </div>
+                                        <p className="text-[11px] text-gray-500 mt-2">
+                                            Disabling removes the link; the URL stops working immediately.
+                                        </p>
                                         <div className="flex gap-2 mt-2">
                                             <a
                                                 href={`${window.location.origin}/s/${staticShared.id}`}
@@ -395,8 +398,9 @@ const ShareFileComponent = () => {
                                                 onClick={deleteStaticShared}
                                                 disabled={staticLoading}
                                                 className="flex-1 px-3 py-2 bg-red-600/80 hover:bg-red-600 rounded text-sm text-white transition-colors disabled:opacity-50"
+                                                title="Disable the permanent link. The URL will stop working immediately."
                                             >
-                                                {staticLoading ? "Deleting..." : "Delete"}
+                                                {staticLoading ? "Disabling..." : "Disable"}
                                             </button>
                                         </div>
                                     </>
