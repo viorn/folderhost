@@ -6,7 +6,7 @@ import { type ExplorerContextType } from '../../types/ExplorerContextType';
 import { DirectoryItemIcon } from '../../utils/DirectoryItemIcon';
 import axiosInstance from '../../utils/axiosInstance';
 import { isImageItem } from '../../utils/isImageItem';
-import { FaSearchPlus } from "react-icons/fa";
+import { FaSearchPlus, FaLink } from "react-icons/fa";
 
 const ItemInfo = () => {
   const renameInput = useRef<HTMLInputElement>(null)
@@ -35,6 +35,8 @@ const ItemInfo = () => {
   const [imageData, setImageData] = useState("")
   const [imageLoading, setImageLoading] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [permanentLoading, setPermanentLoading] = useState(false)
+  const [permanentStatus, setPermanentStatus] = useState("")
 
   const fetchImage = async () => {
     setImageLoading(true)
@@ -82,6 +84,61 @@ const ItemInfo = () => {
       setImageError(false)
     }
   }, [itemInfo])
+
+  const sharePermanentLink = async () => {
+    if (!itemInfo || itemInfo.isDirectory) return
+
+    setPermanentLoading(true)
+    setPermanentStatus("")
+
+    try {
+      const rawPath = path === "./" ? itemInfo.name : `${path}/${itemInfo.name}`
+      const fullPath = rawPath.replace(/^\.\//, "").replace(/\/+/g, "/")
+
+      let shared
+      try {
+        const response = await axiosInstance.post(`/shared`, {
+          shared: {
+            path: fullPath,
+            displayName: itemInfo.name,
+            password: "",
+            expires_at: "",
+            isStatic: true,
+          },
+        })
+        shared = response.data.shared
+      } catch (error: any) {
+        if (error.response?.status === 400 && error.response?.data?.shared) {
+          shared = error.response.data.shared
+        } else {
+          throw error
+        }
+      }
+
+      const url = `${window.location.origin}/s/${shared.id}`
+
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url)
+      } else {
+        const textArea = document.createElement("textarea")
+        textArea.value = url
+        textArea.style.position = "absolute"
+        textArea.style.left = "-999999px"
+        document.body.prepend(textArea)
+        textArea.select()
+        document.execCommand("copy")
+        textArea.remove()
+      }
+
+      setPermanentStatus("Permanent link copied!")
+      setTimeout(() => setPermanentStatus(""), 4000)
+    } catch (error: any) {
+      setPermanentStatus(error.response?.data?.err || "Failed to create permanent link")
+      setTimeout(() => setPermanentStatus(""), 5000)
+    } finally {
+      setPermanentLoading(false)
+    }
+  }
 
   return (
     <div className='flex flex-col items-center justify-center w-full mt-5 md:mt-0 lg:w-1/3 mx-auto min-w-[320px] lg:max-w-[30%] 2xl:min-h-[600px] 2xl:h-[700px] max-h-[800px]'>
@@ -301,6 +358,18 @@ const ItemInfo = () => {
                     disabled
                   >Share</button> : null
             }
+            {
+              permissions?.download_files && !itemInfo?.isDirectory ?
+                <button
+                  className='bg-emerald-700 hover:bg-emerald-600 px-6 font-bold rounded-xl flex items-center justify-center gap-2'
+                  title='Create a permanent public link and copy it.'
+                  disabled={permanentLoading}
+                  onClick={sharePermanentLink}
+                ><FaLink size={14} />{permanentLoading ? "Creating..." : "Permanent link"}</button> : null
+            }
+            {permanentStatus && (
+              <div className='text-center text-sm text-emerald-400 break-all'>{permanentStatus}</div>
+            )}
           </div>
         ) :
           <div className="flex flex-col gap-2 w-5/6">

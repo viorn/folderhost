@@ -15,7 +15,7 @@ func GetSharedPagination(page int, limit int, userID int) ([]types.Shared, error
 	if limit < 1 {
 		limit = 10 // default limit
 	}
-	
+
 	offset := (page - 1) * limit
 	var rows *sql.Rows
 	var err error

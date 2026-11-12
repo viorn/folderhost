@@ -30,9 +30,13 @@ https://files.example.com/s/2d4af4100a3bedc702d4727072babf4f?inline=1
 
 ## Creating a permanent link
 
-1. Open the file's **Share** dialog.
-2. In the **Permanent Link** section click **Create Permanent Link**.
-3. Copy the generated `/s/<id>` URL.
+There are two ways:
+
+1. **One click:** select the file in the explorer and press **Permanent link**
+   in the file info panel. The `/s/<id>` URL is created (or reused) and copied
+   to the clipboard immediately.
+2. **Share dialog:** open **Share**, find the **Permanent Link** section at the
+   top and click **Create Permanent Link**, then copy the URL.
 
 A file can have both a regular share link and a permanent link at the same time;
 they are stored as separate records and have different IDs.

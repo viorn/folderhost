@@ -352,6 +352,65 @@ const ShareFileComponent = () => {
                     {/* Form Content - Show when loaded */}
                     {!isLoading && (
                         <div className="space-y-4">
+                            {/* Permanent / Static Link */}
+                            <div className="mt-4 p-4 bg-emerald-500/5 rounded-lg border border-emerald-500/20">
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="text-sm font-medium text-emerald-400">Permanent Link</label>
+                                    {staticShared && (
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                                            Static
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-400 mb-3">
+                                    Direct URL that never changes: no password, no expiration, no tokens.
+                                </p>
+
+                                {staticShared ? (
+                                    <>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                value={`${window.location.origin}/s/${staticShared.id}`}
+                                                className="w-full px-3 py-2 text-sm bg-gray-900 border border-emerald-500/30 rounded text-gray-300 focus:outline-none"
+                                            />
+                                            <button
+                                                onClick={() => copyToClipboard(`${window.location.origin}/s/${staticShared.id}`)}
+                                                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded text-sm text-white transition-colors"
+                                            >
+                                                Copy
+                                            </button>
+                                        </div>
+                                        <div className="flex gap-2 mt-2">
+                                            <a
+                                                href={`${window.location.origin}/s/${staticShared.id}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="flex-1 text-center px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white transition-colors"
+                                            >
+                                                Open
+                                            </a>
+                                            <button
+                                                onClick={deleteStaticShared}
+                                                disabled={staticLoading}
+                                                className="flex-1 px-3 py-2 bg-red-600/80 hover:bg-red-600 rounded text-sm text-white transition-colors disabled:opacity-50"
+                                            >
+                                                {staticLoading ? "Deleting..." : "Delete"}
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={createStaticShared}
+                                        disabled={staticLoading}
+                                        className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {staticLoading ? "Creating..." : "Create Permanent Link"}
+                                    </button>
+                                )}
+                            </div>
+
                             {/* Readonly Target File */}
                             <div className="p-3 bg-gray-800/50 border border-gray-700/50 rounded-lg flex items-center gap-3">
                                 <div className="flex items-center justify-center w-8 h-8 rounded bg-gray-700/50 text-gray-400 flex-shrink-0">
@@ -442,65 +501,6 @@ const ShareFileComponent = () => {
                                     </div>
                                 </div>
                             )}
-
-                            {/* Permanent / Static Link */}
-                            <div className="mt-4 p-4 bg-emerald-500/5 rounded-lg border border-emerald-500/20">
-                                <div className="flex items-center justify-between mb-1">
-                                    <label className="text-sm font-medium text-emerald-400">Permanent Link</label>
-                                    {staticShared && (
-                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                                            Static
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="text-xs text-gray-400 mb-3">
-                                    Direct URL that never changes: no password, no expiration, no tokens.
-                                </p>
-
-                                {staticShared ? (
-                                    <>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                readOnly
-                                                value={`${window.location.origin}/s/${staticShared.id}`}
-                                                className="w-full px-3 py-2 text-sm bg-gray-900 border border-emerald-500/30 rounded text-gray-300 focus:outline-none"
-                                            />
-                                            <button
-                                                onClick={() => copyToClipboard(`${window.location.origin}/s/${staticShared.id}`)}
-                                                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded text-sm text-white transition-colors"
-                                            >
-                                                Copy
-                                            </button>
-                                        </div>
-                                        <div className="flex gap-2 mt-2">
-                                            <a
-                                                href={`${window.location.origin}/s/${staticShared.id}`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="flex-1 text-center px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white transition-colors"
-                                            >
-                                                Open
-                                            </a>
-                                            <button
-                                                onClick={deleteStaticShared}
-                                                disabled={staticLoading}
-                                                className="flex-1 px-3 py-2 bg-red-600/80 hover:bg-red-600 rounded text-sm text-white transition-colors disabled:opacity-50"
-                                            >
-                                                {staticLoading ? "Deleting..." : "Delete"}
-                                            </button>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <button
-                                        onClick={createStaticShared}
-                                        disabled={staticLoading}
-                                        className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {staticLoading ? "Creating..." : "Create Permanent Link"}
-                                    </button>
-                                )}
-                            </div>
 
                             {/* Action Buttons */}
                             <div className="flex gap-3 mt-8">

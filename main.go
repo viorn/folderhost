@@ -249,6 +249,29 @@ func main() {
 			log.Fatal("Error creating sub FS:", err)
 		}
 
+		// index.html must never be cached: it references content-hashed assets
+		// and an old cached copy keeps users on an old UI after an update.
+		serveIndex := func(c *fiber.Ctx) error {
+			c.Set("Cache-Control", "no-cache, no-store, must-revalidate")
+
+			indexFile, err := distFS.Open("index.html")
+			if err != nil {
+				return c.Status(404).SendString("Not Found")
+			}
+			defer indexFile.Close()
+
+			stat, err := indexFile.Stat()
+			if err != nil {
+				return c.Status(500).SendString("Internal Server Error")
+			}
+
+			c.Type("html")
+			return c.SendStream(indexFile, int(stat.Size()))
+		}
+
+		app.Get("/", serveIndex)
+		app.Get("/index.html", serveIndex)
+
 		app.Get("/share/:id", func(c *fiber.Ctx) error {
 			id := c.Params("id")
 			indexFile, err := distFS.Open("index.html")
@@ -264,6 +287,7 @@ func main() {
 
 			htmlStr := utils.InjectShareMetaTags(string(content), id, c.BaseURL())
 
+			c.Set("Cache-Control", "no-cache, no-store, must-revalidate")
 			c.Type("html")
 			return c.SendString(htmlStr)
 		})
@@ -272,24 +296,10 @@ func main() {
 			Root:         http.FS(distFS),
 			Index:        "index.html",
 			NotFoundFile: "index.html",
-			MaxAge:       86400, // 1 day cache
+			MaxAge:       86400, // 1 day cache for content-hashed assets
 		}))
 
-		app.Get("*", func(c *fiber.Ctx) error {
-			indexFile, err := distFS.Open("index.html")
-			if err != nil {
-				return c.Status(404).SendString("Not Found")
-			}
-			defer indexFile.Close()
-
-			stat, err := indexFile.Stat()
-			if err != nil {
-				return c.Status(500).SendString("Internal Server Error")
-			}
-
-			c.Type("html")
-			return c.SendStream(indexFile, int(stat.Size()))
-		})
+		app.Get("*", serveIndex)
 	}
 
 	asciiFormat := color.New(color.FgCyan).Add(color.Bold)
