@@ -23,7 +23,7 @@ func generateID() (string, error) {
 }
 
 func CreateShared(record *types.Shared) (*types.Shared, error) {
-	row := database.DB.QueryRow("SELECT id, username, userID, displayName, path, password, expires_at, downloadCount, file_extension, created_at FROM shared WHERE userID=? AND path=?", record.UserID, record.Path)
+	row := database.DB.QueryRow("SELECT id, username, userID, displayName, path, password, expires_at, downloadCount, file_extension, is_static, created_at FROM shared WHERE userID=? AND path=? AND is_static=?", record.UserID, record.Path, record.IsStatic)
 
 	var existing types.Shared
 	var password sql.NullString
@@ -40,6 +40,7 @@ func CreateShared(record *types.Shared) (*types.Shared, error) {
 		&expiresAt,
 		&existing.DownloadCount,
 		&existing.FileExtension,
+		&existing.IsStatic,
 		&createdAt,
 	)
 
@@ -93,8 +94,9 @@ func CreateShared(record *types.Shared) (*types.Shared, error) {
 			path,
 			password,
 			expires_at,
-			file_extension
-		) VALUES(?, ?, ?, ?, ?, ?, ?, ?)
+			file_extension,
+			is_static
+		) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("error creating db stmt")
@@ -117,6 +119,7 @@ func CreateShared(record *types.Shared) (*types.Shared, error) {
 		record.Password,
 		insertExpiresAt,
 		record.FileExtension,
+		record.IsStatic,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error executing db stmt: %w", err)

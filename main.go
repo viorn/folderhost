@@ -159,6 +159,10 @@ func main() {
 	app.Get("/shared/:id", routes.GetSharedLink)
 	app.Post("/shared/:id/download", routes.PostSharedFileDownload)
 
+	// Permanent, token-less direct file links
+	app.Get("/s/:id", routes.StaticShare)
+	app.Get("/s/:id/:filename", routes.StaticShare)
+
 	app.Use("/api", middleware.CheckAuth)
 
 	app.Get("/api/user-info", func(c *fiber.Ctx) error {

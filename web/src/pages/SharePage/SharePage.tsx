@@ -32,6 +32,22 @@ const SharePage = () => {
         if (id) fetchShared()
     }, [id])
 
+    const copyPermanentLink = () => {
+        const link = `${window.location.origin}/s/${id}`
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(link)
+        } else {
+            const textArea = document.createElement("textarea")
+            textArea.value = link
+            textArea.style.position = "absolute"
+            textArea.style.left = "-999999px"
+            document.body.prepend(textArea)
+            textArea.select()
+            document.execCommand('copy')
+            textArea.remove()
+        }
+    }
+
     const handleDownload = async () => {
         setError("")
         setDownloading(true)
@@ -198,6 +214,29 @@ const SharePage = () => {
                                         className="w-full pl-11 pr-4 py-3 rounded-lg bg-slate-900 border border-slate-600 text-white focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-all placeholder:text-slate-500 font-medium"
                                         onKeyDown={(e) => e.key === 'Enter' && handleDownload()}
                                     />
+                                </div>
+                            </div>
+                        )}
+
+                        {shared.isStatic && (
+                            <div className="mb-4 p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Permanent Link</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">Static</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        readOnly
+                                        value={`${window.location.origin}/s/${shared.id}`}
+                                        className="w-full px-3 py-2 text-sm bg-slate-900 border border-emerald-500/30 rounded text-slate-300 focus:outline-none"
+                                    />
+                                    <button
+                                        onClick={copyPermanentLink}
+                                        className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded text-sm text-white transition-colors"
+                                    >
+                                        Copy
+                                    </button>
                                 </div>
                             </div>
                         )}

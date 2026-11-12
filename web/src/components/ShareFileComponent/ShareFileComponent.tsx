@@ -12,6 +12,8 @@ const ShareFileComponent = () => {
     const { showShareModal, setShowShareModal, itemInfo, path } = useContext<ExplorerContextType>(ExplorerContext)
     const [shared, setShared] = useState<Shared | null>(null)
     const [sharedFile, setSharedFile] = useState<boolean>(false)
+    const [staticShared, setStaticShared] = useState<Shared | null>(null)
+    const [staticLoading, setStaticLoading] = useState<boolean>(false)
     const [name, setName] = useState("")
     const [password, setPassword] = useState("")
     const [lifetime, setLifetime] = useState<string>("never")
@@ -42,9 +44,10 @@ const ShareFileComponent = () => {
             return
         }
 
+        const rawPath = path === "./" ? itemInfo.name : `${path}/${itemInfo.name}`
+        const fullPath = rawPath.replace(/^\.\//, "").replace(/\/+/g, "/")
+
         try {
-            const rawPath = path === "./" ? itemInfo.name : `${path}/${itemInfo.name}`
-            const fullPath = rawPath.replace(/^\.\//, "").replace(/\/+/g, "/")
             const response = await axiosInstance.get<Shared>(`/shared/${fullPath}`)
             setShared(response.data)
             setSharedFile(true)
@@ -56,9 +59,19 @@ const ShareFileComponent = () => {
             if (error.response?.status !== 404) {
                 setError(error.response?.data?.err || "Error loading share status")
             }
-        } finally {
-            setIsLoading(false)
         }
+
+        try {
+            const staticResponse = await axiosInstance.get<Shared>(`/shared/${fullPath}?static=true`)
+            setStaticShared(staticResponse.data)
+        } catch (error: any) {
+            if (error.response?.status !== 404) {
+                console.error("Error loading permanent link status", error)
+            }
+            setStaticShared(null)
+        }
+
+        setIsLoading(false)
     }
 
     const createShared = async () => {
@@ -191,9 +204,72 @@ const ShareFileComponent = () => {
         }
     }
 
+    const createStaticShared = async () => {
+        setError("")
+        setSuccess("")
+        setStaticLoading(true)
+
+        if (!itemInfo) {
+            setError("No file selected!")
+            setStaticLoading(false)
+            return
+        }
+
+        try {
+            const rawPath = path === "./" ? itemInfo.name : `${path}/${itemInfo.name}`
+            const fullPath = rawPath.replace(/^\.\//, "").replace(/\/+/g, "/")
+            const response = await axiosInstance.post<{ response: string, shared: Shared }>(`/shared`, {
+                shared: {
+                    path: fullPath,
+                    displayName: name || itemInfo.name,
+                    password: "",
+                    expires_at: "",
+                    isStatic: true,
+                },
+            })
+            setStaticShared(response.data.shared)
+            setSuccess("Permanent link created!")
+        } catch (error: any) {
+            if (error.response?.status === 400 && error.response?.data?.shared) {
+                setStaticShared(error.response.data.shared)
+                setSuccess("Permanent link already exists.")
+            } else {
+                setError(error.response?.data?.err || "Failed to create permanent link.")
+            }
+        } finally {
+            setStaticLoading(false)
+        }
+    }
+
+    const deleteStaticShared = async () => {
+        setError("")
+        setSuccess("")
+        setStaticLoading(true)
+
+        if (!itemInfo) {
+            setError("No file selected!")
+            setStaticLoading(false)
+            return
+        }
+
+        try {
+            const rawPath = path === "./" ? itemInfo.name : `${path}/${itemInfo.name}`
+            const fullPath = rawPath.replace(/^\.\//, "").replace(/\/+/g, "/")
+            await axiosInstance.delete(`/shared/${fullPath}?static=true`)
+            setStaticShared(null)
+            setSuccess("Permanent link deleted!")
+        } catch (error: any) {
+            setError(error.response?.data?.err || "Failed to delete permanent link.")
+        } finally {
+            setStaticLoading(false)
+        }
+    }
+
     const resetState = () => {
         setShared(null)
         setSharedFile(false)
+        setStaticShared(null)
+        setStaticLoading(false)
         setName("")
         setPassword("")
         setLifetime("never")
@@ -366,6 +442,65 @@ const ShareFileComponent = () => {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Permanent / Static Link */}
+                            <div className="mt-4 p-4 bg-emerald-500/5 rounded-lg border border-emerald-500/20">
+                                <div className="flex items-center justify-between mb-1">
+                                    <label className="text-sm font-medium text-emerald-400">Permanent Link</label>
+                                    {staticShared && (
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                                            Static
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-400 mb-3">
+                                    Direct URL that never changes: no password, no expiration, no tokens.
+                                </p>
+
+                                {staticShared ? (
+                                    <>
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                readOnly
+                                                value={`${window.location.origin}/s/${staticShared.id}`}
+                                                className="w-full px-3 py-2 text-sm bg-gray-900 border border-emerald-500/30 rounded text-gray-300 focus:outline-none"
+                                            />
+                                            <button
+                                                onClick={() => copyToClipboard(`${window.location.origin}/s/${staticShared.id}`)}
+                                                className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded text-sm text-white transition-colors"
+                                            >
+                                                Copy
+                                            </button>
+                                        </div>
+                                        <div className="flex gap-2 mt-2">
+                                            <a
+                                                href={`${window.location.origin}/s/${staticShared.id}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="flex-1 text-center px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white transition-colors"
+                                            >
+                                                Open
+                                            </a>
+                                            <button
+                                                onClick={deleteStaticShared}
+                                                disabled={staticLoading}
+                                                className="flex-1 px-3 py-2 bg-red-600/80 hover:bg-red-600 rounded text-sm text-white transition-colors disabled:opacity-50"
+                                            >
+                                                {staticLoading ? "Deleting..." : "Delete"}
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <button
+                                        onClick={createStaticShared}
+                                        disabled={staticLoading}
+                                        className="w-full px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {staticLoading ? "Creating..." : "Create Permanent Link"}
+                                    </button>
+                                )}
+                            </div>
 
                             {/* Action Buttons */}
                             <div className="flex gap-3 mt-8">

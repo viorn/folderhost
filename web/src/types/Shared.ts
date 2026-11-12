@@ -8,5 +8,6 @@ export interface Shared {
     expires_at: string,
     downloadCount: number,
     fileExtension: string,
+    isStatic: boolean,
     created_at: string
 }

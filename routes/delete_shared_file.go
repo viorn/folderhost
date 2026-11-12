@@ -35,7 +35,9 @@ func DeleteSharedFile(c *fiber.Ctx) error {
 	}
 	absolutePath := fmt.Sprintf("%s%s", config.Config.GetScopedFolder(account.Scope), recordPath)
 
-	err = shared.DeleteSharedByPath(*account.ID, absolutePath)
+	isStatic := c.QueryBool("static", false)
+
+	err = shared.DeleteSharedByPath(*account.ID, absolutePath, isStatic)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"err": "Failed to delete shared file."})
 	}

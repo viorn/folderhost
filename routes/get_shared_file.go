@@ -30,7 +30,9 @@ func GetSharedFile(c *fiber.Ctx) error {
 
 	absolutePath := fmt.Sprintf("%s%s", config.Config.GetScopedFolder(account.Scope), recordPath)
 
-	record, err := shared.GetSharedByPath(*account.ID, absolutePath)
+	isStatic := c.QueryBool("static", false)
+
+	record, err := shared.GetSharedByPath(*account.ID, absolutePath, isStatic)
 	if err != nil {
 		return c.Status(404).JSON(fiber.Map{"err": "Shared not found or access denied."})
 	}

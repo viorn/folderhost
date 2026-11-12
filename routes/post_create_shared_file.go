@@ -3,6 +3,7 @@ package routes
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -40,6 +41,19 @@ func PostCreateSharedFile(c *fiber.Ctx) error {
 		return c.Status(400).JSON(
 			fiber.Map{"err": "Bad request!"},
 		)
+	}
+
+	// Static shares are meant to be permanent, public, direct links.
+	// Password protection and expiration would defeat that purpose.
+	if requestBody.Shared.IsStatic {
+		info, statErr := os.Stat(requestBody.Shared.Path)
+		if statErr != nil || info.IsDir() {
+			return c.Status(400).JSON(
+				fiber.Map{"err": "Only existing files can be shared as permanent links."},
+			)
+		}
+		requestBody.Shared.Password = ""
+		requestBody.Shared.ExpiresAt = ""
 	}
 
 	ext := filepath.Ext(requestBody.Shared.Path)

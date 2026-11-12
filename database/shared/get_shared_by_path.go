@@ -8,8 +8,8 @@ import (
 	"github.com/MertJSX/folderhost/types"
 )
 
-func GetSharedByPath(userID int, path string) (*types.Shared, error) {
-	row := database.DB.QueryRow("SELECT id, username, userID, displayName, path, password, expires_at, downloadCount, file_extension, created_at FROM shared WHERE userID=? AND path=?", userID, path)
+func GetSharedByPath(userID int, path string, isStatic bool) (*types.Shared, error) {
+	row := database.DB.QueryRow("SELECT id, username, userID, displayName, path, password, expires_at, downloadCount, file_extension, is_static, created_at FROM shared WHERE userID=? AND path=? AND is_static=?", userID, path, isStatic)
 
 	var record types.Shared
 	var password sql.NullString
@@ -27,6 +27,7 @@ func GetSharedByPath(userID int, path string) (*types.Shared, error) {
 		&expiresAt,
 		&record.DownloadCount,
 		&fileExtension,
+		&record.IsStatic,
 		&createdAt,
 	)
 

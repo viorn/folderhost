@@ -10,5 +10,6 @@ type Shared struct {
 	ExpiresAt     string `json:"expires_at"`
 	DownloadCount int    `json:"downloadCount"`
 	FileExtension string `json:"fileExtension"`
+	IsStatic      bool   `json:"isStatic"`
 	CreatedAt     string `json:"created_at"`
 }

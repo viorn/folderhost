@@ -9,7 +9,7 @@ import (
 )
 
 func GetSharedByID(id string) (*types.Shared, error) {
-	row := database.DB.QueryRow("SELECT id, username, userID, displayName, path, password, expires_at, downloadCount, file_extension, created_at FROM shared WHERE id=?", id)
+	row := database.DB.QueryRow("SELECT id, username, userID, displayName, path, password, expires_at, downloadCount, file_extension, is_static, created_at FROM shared WHERE id=?", id)
 
 	var record types.Shared
 	var password sql.NullString
@@ -27,6 +27,7 @@ func GetSharedByID(id string) (*types.Shared, error) {
 		&expiresAt,
 		&record.DownloadCount,
 		&fileExtension,
+		&record.IsStatic,
 		&createdAt,
 	)
 

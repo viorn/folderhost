@@ -7,7 +7,7 @@ import (
 	"github.com/MertJSX/folderhost/database"
 )
 
-func DeleteSharedByPath(userID int, path string) error {
+func DeleteSharedByPath(userID int, path string, isStatic bool) error {
 	tx, err := database.DB.Begin()
 	if err != nil {
 		log.Fatal(err)
@@ -15,13 +15,13 @@ func DeleteSharedByPath(userID int, path string) error {
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.Prepare("DELETE FROM shared WHERE userID=? AND path=?")
+	stmt, err := tx.Prepare("DELETE FROM shared WHERE userID=? AND path=? AND is_static=?")
 	if err != nil {
 		return fmt.Errorf("error creating db stmt")
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(userID, path)
+	_, err = stmt.Exec(userID, path, isStatic)
 	if err != nil {
 		return fmt.Errorf("error executing db stmt: %w", err)
 	}

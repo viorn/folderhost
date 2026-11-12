@@ -41,6 +41,7 @@ func InitializeDatabase() {
 	database.CreateLogsTable()
 	database.CreateRecoveryTable()
 	database.CreateSharedTable()
+	database.MigrateSharedTable()
 
 	if firstTime {
 		err = users.CreateUser(&config.Config.AdminAccount, true)

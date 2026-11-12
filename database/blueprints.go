@@ -94,6 +94,25 @@ func CreateRecoveryTable() {
 	`)
 }
 
+// MigrateSharedTable adds columns introduced after the initial release.
+// SQLite has no "ADD COLUMN IF NOT EXISTS", so we inspect the schema first.
+func MigrateSharedTable() {
+	var count int
+	err := DB.QueryRow("SELECT COUNT(*) FROM pragma_table_info('shared') WHERE name='is_static';").Scan(&count)
+	if err != nil {
+		log.Printf("Error checking shared.is_static column: %v\n", err)
+		return
+	}
+
+	if count == 0 {
+		_, err = DB.Exec("ALTER TABLE shared ADD COLUMN is_static INTEGER NOT NULL DEFAULT 0;")
+		if err != nil {
+			log.Fatalf("Error adding shared.is_static column: %v", err)
+		}
+		fmt.Println("Shared table migrated: is_static column added!")
+	}
+}
+
 func CreateSharedTable() {
 	executeBlueprint("shared", `
 		CREATE TABLE IF NOT EXISTS shared (
@@ -106,6 +125,7 @@ func CreateSharedTable() {
 			expires_at DATETIME NULL,
 			downloadCount INTEGER NOT NULL DEFAULT 0,
 			file_extension TEXT NULL,
+			is_static INTEGER NOT NULL DEFAULT 0,
         	created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (username) REFERENCES users(username) 
                 ON DELETE CASCADE 

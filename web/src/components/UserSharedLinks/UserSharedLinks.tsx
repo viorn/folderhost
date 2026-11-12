@@ -64,6 +64,7 @@ const UserSharedLinks: React.FC<UserSharedLinksProps> = ({ username }) => {
                             <div className="flex-1 min-w-0 p-4 pr-2">
                                 <div className="text-sky-300 font-medium truncate mb-1" title={link.displayName || link.path}>
                                     {link.displayName || link.path.split('/').pop()} {link.fileExtension && <span className="text-gray-400 text-xs ml-1 bg-gray-800 px-2 py-0.5 rounded uppercase">{link.fileExtension}</span>}
+                                    {link.isStatic && <span className="text-emerald-400 text-xs ml-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded uppercase">Permanent</span>}
                                 </div>
                                 <div className="text-xs text-gray-400 truncate mb-2" title={link.path}>
                                     Path: {link.path}
@@ -84,6 +85,14 @@ const UserSharedLinks: React.FC<UserSharedLinksProps> = ({ username }) => {
                                         <span className="flex text-sky-300 items-center gap-1">
                                             <FaLock size={10} /> Password Protected
                                         </span>
+                                    )}
+                                    {link.isStatic && (
+                                        <button
+                                            onClick={() => navigator.clipboard.writeText(`${window.location.origin}/s/${link.id}`)}
+                                            className="text-emerald-400 hover:text-emerald-300 hover:underline"
+                                        >
+                                            Copy permanent link
+                                        </button>
                                     )}
                                 </div>
                             </div>
